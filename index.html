@@ -33,6 +33,18 @@
       z-index: 0 !important;
     }
 
+    a-scene {
+      background: transparent !important;
+    }
+
+    a-scene canvas {
+      background: transparent !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      z-index: 1 !important;
+    }
+
     #start-overlay {
       position: fixed;
       top: 0;
@@ -126,6 +138,7 @@
       antialias: true;
       colorManagement: true;
       logarithmicDepthBuffer: true;
+      alpha: true;
     "
   >
 
