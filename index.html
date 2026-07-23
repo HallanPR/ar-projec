@@ -1,110 +1,51 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- ============================================================
-       METADATOS BÁSICOS
-       ============================================================ -->
   <meta charset="UTF-8" />
-  <!-- El viewport es clave para que la página se ajuste al móvil.
-       Le prohibimos al usuario hacer zoom porque eso rompe la experiencia AR.
-       Con "user-scalable=no" evitamos que el tamaño del vídeo se descontrole. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>AR Seoane</title>
 
-  <!-- ============================================================
-       LIBRERÍAS
-       ============================================================ -->
-  <!-- A-Frame es el motor 3D. Con él montamos la escena usando solo HTML.
-       AR.js es el que se encarga de la cámara y de leer los marcadores.
-       A-Frame Extras nos da el componente 'animation-mixer' para que las
-       animaciones del modelo .glb se reproduzcan solas. -->
+  <!-- Librerías -->
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
-  <!-- ============================================================
-       ESTILOS CSS
-       ============================================================ -->
   <style>
-    /* Reseteo básico: quitamos márgenes y paddings que el navegador mete por defecto. */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    /* El body ocupa el 100% de la pantalla y no tiene scroll.
-       El fondo negro es para que no se vea un flash blanco mientras carga la cámara. */
-    html, body {
-      width: 100%;
-      height: 100%;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html {
+      width: 100%; height: 100%;
       overflow: hidden;
       background: black;
-      font-family: sans-serif;
     }
-
-    /* --- OJO: esto es lo más importante para quitar los bordes negros ---
-       AR.js crea un elemento <video> dentro de la página, normalmente con
-       clase 'a-arjs-video' o id 'arjs-video'. Con estos selectores tan
-       específicos y el '!important' nos aseguramos de que ese vídeo
-       ocupe absolutamente toda la pantalla, sin deformarse y sin
-       franjas negras. 'object-fit: cover' hace que la imagen de la
-       cámara se recorte para llenar el contenedor, pero sin distorsión. */
-    .a-arjs-video,
-    video.a-arjs-video,
-    #arjs-video,
-    video {
+    /* Forzar el vídeo a toda la pantalla sin bordes negros */
+    .a-arjs-video, video.a-arjs-video, #arjs-video, video {
       object-fit: cover !important;
       width: 100vw !important;
       height: 100vh !important;
-      min-width: 100vw !important;
-      min-height: 100vh !important;
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
       margin: 0 !important;
-      padding: 0 !important;
       z-index: 0 !important;
-      background: black;
     }
-
-    /* --- Overlay de inicio ---
-       En iOS es obligatorio que el usuario toque un botón antes de que
-       el navegador active la cámara, así que ponemos esta capa negra
-       con un botón bonito. También sirve para que la persona decida
-       cuándo empezar, sin que la cámara se active al cargar la página. */
+    /* Overlay de inicio */
     #startOverlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       color: white;
-      z-index: 999;          /* Por encima del vídeo y de todo */
+      z-index: 999;
       cursor: pointer;
       text-align: center;
       padding: 20px;
-      box-sizing: border-box;
     }
-
-    #startOverlay h1 {
-      font-size: 2.5rem;
-      margin: 0;
-    }
-
-    #startOverlay p {
-      font-size: 1.2rem;
-      margin: 10px 0 20px;
-      opacity: 0.8;
-    }
-
+    #startOverlay h1 { font-size: 2.5rem; margin: 0; }
+    #startOverlay p { font-size: 1.2rem; margin: 10px 0 20px; opacity: 0.8; }
     #startOverlay .btn {
       background: #4CAF50;
       color: white;
@@ -113,155 +54,82 @@
       font-size: 1.5rem;
       border-radius: 50px;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       transition: transform 0.2s;
     }
-
-    /* Pequeño efecto de pulsación para que el botón se sienta interactivo */
-    #startOverlay .btn:active {
-      transform: scale(0.95);
-    }
-
-    /* Esta clase la usaremos en JavaScript para ocultar el overlay */
-    .hidden {
-      display: none !important;
-    }
+    #startOverlay .btn:active { transform: scale(0.95); }
+    .hidden { display: none !important; }
   </style>
 </head>
-
 <body>
 
-  <!-- ============================================================
-       PANTALLA DE INICIO (overlay)
-       ============================================================ -->
   <div id="startOverlay">
     <h1>📱 AR</h1>
     <p>Proyecto Seoane</p>
     <button class="btn" id="startBtn">▶ Iniciar</button>
   </div>
 
-  <!-- ============================================================
-       ESCENA DE REALIDAD AUMENTADA
-       ============================================================ -->
   <a-scene
     id="scene"
-    embedded                                 <!-- Integrada en la página, no en pantalla completa -->
-    arjs="
-      sourceType: webcam;                    <!-- Usamos la cámara del móvil -->
-      debugUIEnabled: false;                <!-- Quitamos los botones de depuración de AR.js (más limpio) -->
-      detectionMode: mono_and_matrix;       <!-- Mejora la detección en condiciones de luz variadas -->
-      matrixCodeType: 3x3;                  <!-- El marcador Hiro es de tipo 3x3 -->
-    "
-    renderer="
-      antialias: true;                      <!-- Suaviza los bordes del modelo 3D -->
-      colorManagement: true;                <!-- Para que los colores se vean más realistas -->
-    "
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+    renderer="antialias: true; colorManagement: true;"
   >
-
-    <!-- ===== RECURSOS (ASSETS) ===== -->
-    <!-- Aquí declaramos los archivos que vamos a usar. El navegador los cargará
-         antes de mostrar la escena, así evitamos que el modelo aparezca a medias. -->
     <a-assets>
-      <!-- Nuestro modelo 3D. El atributo 'id' nos permite referenciarlo después con #miModelo.
-           Asegúrate de que el archivo 'proyecto_seoane.glb' esté en la misma carpeta. -->
       <a-asset-item id="miModelo" src="proyecto_seoane.glb"></a-asset-item>
     </a-assets>
 
-    <!-- ===== MARCADOR Y MODELO ===== -->
-    <!-- 'preset="hiro"' usa el patrón Hiro estándar. Es el que viene por defecto
-         en AR.js y el más fácil de imprimir. -->
     <a-marker preset="hiro">
-
-      <!-- Aquí dentro va el objeto 3D que queremos ver sobre el marcador.
-           Lo he puesto con tamaño reducido (scale="0.4") porque el modelo
-           original seguramente era enorme y no cabía bien.
-           En 'position' he puesto "-0.5" en el eje Y para que la base del
-           modelo toque justo el marcador. Si ves que aún flota o se hunde,
-           ajusta ese número (más negativo = más abajo).
-           La rotación "-90 0 0" es un clásico: Blender usa Z como arriba,
-           pero A-Frame usa Y como arriba, así que giramos el modelo 90°
-           en el eje X para que se ponga de pie. -->
       <a-entity
         gltf-model="#miModelo"
         animation-mixer
         scale="0.4 0.4 0.4"
-        position="0 -0.5 0"
+        position="0 0 0"
         rotation="-90 0 0"
       ></a-entity>
-
     </a-marker>
 
-    <!-- La cámara virtual es obligatoria en A-Frame, aunque AR.js la controla
-         con la cámara real. La dejamos vacía con los parámetros por defecto. -->
     <a-entity camera></a-entity>
-
   </a-scene>
 
-  <!-- ============================================================
-       JAVASCRIPT: INICIO Y AJUSTES FINOS
-       ============================================================ -->
   <script>
     (function() {
-      // Cojo referencias a los elementos que voy a manipular
       const overlay = document.getElementById('startOverlay');
       const startBtn = document.getElementById('startBtn');
       const scene = document.getElementById('scene');
 
-      // Esta función se ejecuta cuando el usuario hace clic en "Iniciar"
       function startAR() {
-        // Oculto el overlay
         overlay.classList.add('hidden');
-
-        // Arranco la cámara. AR.js tiene un método 'play()' que activa el vídeo.
-        // Si por algún casual el componente no está listo, arranco la escena directamente.
         if (scene.components && scene.components['arjs']) {
           scene.components['arjs'].play();
         } else {
           scene.play();
         }
-
-        // A veces el vídeo tarda un poco en aparecer y no coge bien los estilos.
-        // Por eso, medio segundo después, fuerzo de nuevo que ocupe toda la pantalla.
-        setTimeout(forceVideoFullscreen, 500);
+        // Forzar ajuste del vídeo después de iniciar
+        setTimeout(function() {
+          const videos = document.querySelectorAll('video');
+          videos.forEach(v => {
+            v.style.objectFit = 'cover';
+            v.style.width = '100vw';
+            v.style.height = '100vh';
+            v.style.position = 'fixed';
+            v.style.top = '0';
+            v.style.left = '0';
+            v.style.margin = '0';
+          });
+        }, 500);
       }
 
-      // Esta función busca todos los vídeos que haya en la página (AR.js crea uno)
-      // y les aplica manualmente los estilos para que llenen el viewport.
-      // Es un "refuerzo" por si el CSS no hubiera bastado (por ejemplo, en algunos navegadores).
-      function forceVideoFullscreen() {
-        const videos = document.querySelectorAll('video');
-        videos.forEach(v => {
-          v.style.objectFit = 'cover';
-          v.style.width = '100vw';
-          v.style.height = '100vh';
-          v.style.position = 'fixed';
-          v.style.top = '0';
-          v.style.left = '0';
-          v.style.margin = '0';
-          v.style.padding = '0';
-        });
-      }
-
-      // Evento clic en el botón "Iniciar"
       startBtn.addEventListener('click', function(e) {
-        e.stopPropagation(); // Evito que el clic se propague al overlay y llame a startAR dos veces
+        e.stopPropagation();
         startAR();
       });
 
-      // También permito que el usuario toque cualquier parte del overlay (excepto el botón)
-      // para iniciar, así es más fácil y no tiene que apuntar justo al botón.
       overlay.addEventListener('click', function(e) {
         if (e.target !== startBtn) {
           startAR();
         }
       });
-
-      // Si el usuario gira el móvil (cambia la orientación), el vídeo puede
-      // desajustarse; al redimensionarse la ventana, volvemos a forzar los estilos.
-      window.addEventListener('resize', forceVideoFullscreen);
-
-    })(); // La función se ejecuta inmediatamente al cargar la página.
+    })();
   </script>
-
 </body>
 </html>
