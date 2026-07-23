@@ -24,6 +24,7 @@
 
     #arjs-video, .a-arjs-video {
       object-fit: cover !important;
+      object-position: center !important;
       width: 100vw !important;
       height: 100vh !important;
       position: fixed !important;
@@ -116,7 +117,10 @@
       debugUIEnabled: false;
       detectionMode: mono_and_matrix;
       matrixCodeType: 3x3;
-      resolution: 640x480;
+      sourceWidth: 1280;
+      sourceHeight: 960;
+      displayWidth: 1280;
+      displayHeight: 960;
     "
     renderer="
       antialias: true;
