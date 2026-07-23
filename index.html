@@ -22,7 +22,6 @@
       background: black;
     }
 
-    /* Forzar que el vídeo de la cámara ocupe toda la pantalla */
     #arjs-video, .a-arjs-video {
       object-fit: cover !important;
       width: 100vw !important;
@@ -33,7 +32,6 @@
       z-index: 0 !important;
     }
 
-    /* Overlay de inicio */
     #start-overlay {
       position: fixed;
       top: 0;
@@ -134,12 +132,13 @@
 
     <!-- Marcador Hiro -->
     <a-marker preset="hiro">
+      <!-- Le sumamos 90° positivos en X -->
       <a-entity
         gltf-model="#miModelo"
         animation-mixer
         scale="0.35 0.35 0.35"
         position="0 0 0"
-        rotation="-90 0 0"
+        rotation="90 0 0"
       ></a-entity>
     </a-marker>
 
@@ -159,12 +158,10 @@
         overlay.classList.add('hidden');
         loading.classList.remove('hidden');
 
-        // Forzar el inicio de AR.js
         if (scene.components && scene.components['arjs']) {
           scene.components['arjs'].play();
         }
 
-        // Ocultar mensaje de carga tras unos segundos
         setTimeout(() => {
           loading.classList.add('hidden');
         }, 3000);
