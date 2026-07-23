@@ -10,30 +10,50 @@
   <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
   <style>
-    body, html {
+    /* Reset total */
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
+      background: black;
       font-family: sans-serif;
     }
-    .a-arjs-video {
+
+    /* Forzar el vídeo de la cámara a ocupar toda la pantalla SIN bordes negros */
+    .a-arjs-video,
+    video.a-arjs-video,
+    #arjs-video,
+    video {
       object-fit: cover !important;
       width: 100vw !important;
       height: 100vh !important;
+      min-width: 100vw !important;
+      min-height: 100vh !important;
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
       z-index: 0 !important;
+      background: black;
     }
+
+    /* Overlay de inicio */
     #startOverlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.7);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -45,8 +65,15 @@
       padding: 20px;
       box-sizing: border-box;
     }
-    #startOverlay h1 { font-size: 2.5rem; margin: 0; }
-    #startOverlay p { font-size: 1.2rem; margin: 10px 0 20px; opacity: 0.8; }
+    #startOverlay h1 {
+      font-size: 2.5rem;
+      margin: 0;
+    }
+    #startOverlay p {
+      font-size: 1.2rem;
+      margin: 10px 0 20px;
+      opacity: 0.8;
+    }
     #startOverlay .btn {
       background: #4CAF50;
       color: white;
@@ -57,7 +84,9 @@
       cursor: pointer;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    .hidden { display: none !important; }
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
@@ -83,7 +112,7 @@
         gltf-model="#miModelo"
         animation-mixer
         scale="0.4 0.4 0.4"
-        position="0 -0.5 0"   <!-- Ajusta este valor para que la base toque el marcador -->
+        position="0 -0.5 0"
         rotation="-90 0 0"
       ></a-entity>
     </a-marker>
@@ -104,6 +133,22 @@
         } else {
           scene.play();
         }
+        // Forzar que el vídeo se redimensione después de un pequeño retraso
+        setTimeout(forceVideoFullscreen, 500);
+      }
+
+      function forceVideoFullscreen() {
+        const videos = document.querySelectorAll('video');
+        videos.forEach(v => {
+          v.style.objectFit = 'cover';
+          v.style.width = '100vw';
+          v.style.height = '100vh';
+          v.style.position = 'fixed';
+          v.style.top = '0';
+          v.style.left = '0';
+          v.style.margin = '0';
+          v.style.padding = '0';
+        });
       }
 
       startBtn.addEventListener('click', function(e) {
@@ -116,6 +161,9 @@
           startAR();
         }
       });
+
+      // También forzar cuando la ventana cambie de tamaño (orientación)
+      window.addEventListener('resize', forceVideoFullscreen);
     })();
   </script>
 </body>
