@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Proyecto AR - Seoane</title>
+  <title>AR Seoane</title>
 
   <!-- Librerías -->
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
@@ -11,7 +11,7 @@
   <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
   <style>
-    /* Reset y fullscreen */
+    /* Pantalla completa sin márgenes */
     body, html {
       margin: 0;
       padding: 0;
@@ -19,12 +19,11 @@
       height: 100%;
       overflow: hidden;
       font-family: sans-serif;
-      background: black;
     }
 
-    #arjs-video, .a-arjs-video {
+    /* El vídeo de la cámara ocupa todo el espacio */
+    .a-arjs-video {
       object-fit: cover !important;
-      object-position: center !important;
       width: 100vw !important;
       height: 100vh !important;
       position: fixed !important;
@@ -33,169 +32,120 @@
       z-index: 0 !important;
     }
 
-    a-scene {
-      background: transparent !important;
-    }
-
-    a-scene canvas {
-      background: transparent !important;
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      z-index: 1 !important;
-    }
-
-    #start-overlay {
+    /* Overlay simple para iniciar (necesario en iOS) */
+    #startOverlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.6);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 999;
       color: white;
+      z-index: 999;
+      cursor: pointer;
       text-align: center;
       padding: 20px;
       box-sizing: border-box;
-      cursor: pointer;
     }
-    #start-overlay h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      font-weight: 300;
+    #startOverlay h1 {
+      font-size: 2.5rem;
+      margin: 0;
     }
-    #start-overlay p {
-      font-size: 1.1rem;
+    #startOverlay p {
+      font-size: 1.2rem;
+      margin: 10px 0 20px;
       opacity: 0.8;
-      max-width: 300px;
-      margin: 0.5rem 0 1.5rem;
     }
-    #start-overlay .btn {
+    #startOverlay .btn {
       background: #4CAF50;
-      border: none;
       color: white;
-      padding: 16px 40px;
-      font-size: 1.3rem;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.5rem;
       border-radius: 50px;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      transition: transform 0.2s;
-      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    #start-overlay .btn:active {
-      transform: scale(0.94);
-    }
-
     .hidden {
       display: none !important;
     }
-
-    #loading {
-      position: fixed;
-      bottom: 30px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      color: white;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-      z-index: 10;
-      font-size: 0.9rem;
-      pointer-events: none;
-    }
   </style>
 </head>
-
 <body>
 
   <!-- Overlay de inicio -->
-  <div id="start-overlay">
-    <h1>📱 Realidad Aumentada</h1>
+  <div id="startOverlay">
+    <h1>📱 AR</h1>
     <p>Proyecto Seoane</p>
-    <button class="btn" id="start-btn">▶ Iniciar Cámara</button>
+    <button class="btn" id="startBtn">▶ Iniciar</button>
   </div>
-
-  <div id="loading" class="hidden">⏳ Cargando cámara...</div>
 
   <!-- Escena AR -->
   <a-scene
-    id="arScene"
+    id="scene"
     embedded
     arjs="
       sourceType: webcam;
       debugUIEnabled: false;
       detectionMode: mono_and_matrix;
       matrixCodeType: 3x3;
-      sourceWidth: 1280;
-      sourceHeight: 960;
-      displayWidth: 1280;
-      displayHeight: 960;
     "
     renderer="
       antialias: true;
       colorManagement: true;
-      logarithmicDepthBuffer: true;
-      alpha: true;
     "
   >
-
-    <!-- Carga del modelo -->
     <a-assets>
       <a-asset-item id="miModelo" src="proyecto_seoane.glb"></a-asset-item>
     </a-assets>
 
-    <!-- Marcador Hiro -->
+    <!-- Marcador Hiro con modelo a escala 0.4 (un poco más chico) -->
     <a-marker preset="hiro">
-      <!-- Rotación final: De pie y mirando al frente -->
       <a-entity
         gltf-model="#miModelo"
         animation-mixer
-        scale="0.35 0.35 0.35"
+        scale="0.4 0.4 0.4"
         position="0 0 0"
-        rotation="0 0 0"
+        rotation="-90 0 0"
       ></a-entity>
     </a-marker>
 
     <!-- Cámara -->
     <a-entity camera></a-entity>
-
   </a-scene>
 
   <script>
     (function() {
-      const overlay = document.getElementById('start-overlay');
-      const startBtn = document.getElementById('start-btn');
-      const loading = document.getElementById('loading');
-      const scene = document.getElementById('arScene');
+      const overlay = document.getElementById('startOverlay');
+      const startBtn = document.getElementById('startBtn');
+      const scene = document.getElementById('scene');
 
-      function iniciarAR() {
+      function startAR() {
         overlay.classList.add('hidden');
-        loading.classList.remove('hidden');
-
+        // Forzar el inicio de la cámara
         if (scene.components && scene.components['arjs']) {
           scene.components['arjs'].play();
+        } else {
+          scene.play();
         }
-
-        setTimeout(() => {
-          loading.classList.add('hidden');
-        }, 3000);
       }
 
-      startBtn.addEventListener('click', (e) => {
+      startBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        iniciarAR();
+        startAR();
       });
 
-      overlay.addEventListener('click', (e) => {
+      // También al tocar el overlay (excepto si fue el botón)
+      overlay.addEventListener('click', function(e) {
         if (e.target !== startBtn) {
-          iniciarAR();
+          startAR();
         }
       });
     })();
   </script>
-
 </body>
 </html>
